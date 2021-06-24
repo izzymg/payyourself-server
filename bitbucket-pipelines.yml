@@ -6,7 +6,8 @@
 image: golang:1.16
 
 pipelines:
-  default:
+  branches:
+    staging:
     - parallel:
       - step:
           name: Test and Build
