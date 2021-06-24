@@ -78,3 +78,7 @@ func TestServe(t *testing.T) {
 		})
 	}
 }
+
+func TestFailTest(t *testing.T) {
+	t.Error("supposed to fail!")
+}
