@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-signin-client_id">
+    <title>Pay Yourself min client</title>
+    <script src="main.js"></script>
+    <script src="https://apis.google.com/js/platform.js?onload=appInit" async defer></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main>
+        <h1>Pay Yourself - Min Client</h1>
+        <p>Minimal client for testing backend integration for Pay Yourself</p>
+
+        <h2>Debug</h2>
+        <textarea class="debug-area"></textarea>
+        
+
+        <section>
+            <div id="my-signin2"></div>
+
+            <aside class="logged-in">
+                <div class="name-wrap">
+                    <span class="name"></span>
+                </div>
+                <img class="photo" width="24px" height="24px" />
+                <a href="#" class="sign-out-btn">Sign out</a>
+            </aside>
+
+            <button class="get-user-save-btn">Get user save</button>
+            <button class="remove-user-save-btn">Remove user save</button>
+            <button class="save-user-save-btn">Save user save</button>
+        </section>
+    </main>
+</body>
+</html>
