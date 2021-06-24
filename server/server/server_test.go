@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -53,14 +54,27 @@ func TestGetHandler(t *testing.T) {
 }
 
 func TestServe(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	t.Run("should die on invalid port", func(t *testing.T) {
+		shutdown := make(chan error)
+		go Serve(context.TODO(), "localhost:-1", shutdown)
+		err := <-shutdown
+		if err == nil {
+			t.Error("expected invalid port error, got none")
+		}
+	})
 
-	go Serve(ctx, "localhost:5000")
+	testCount := 10
+	for i := 0; i < testCount; i++ {
+		t.Run(fmt.Sprintf("should startup,shutdown on cancel: %d", i), func(t *testing.T) {
+			shutdown := make(chan error)
+			ctx, cancel := context.WithCancel(context.Background())
 
-	_, err := http.Get("http://localhost:5000")
-	if err != nil {
-		t.Error(err)
+			go Serve(ctx, "localhost:0", shutdown)
+			cancel()
+			err := <-shutdown
+			if err != nil {
+				t.Error("got err on graceful shutdown: %w", err)
+			}
+		})
 	}
-
-	cancel()
 }

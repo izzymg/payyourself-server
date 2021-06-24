@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -34,7 +33,7 @@ func (h GetHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "hello!")
 }
 
-func Serve(ctx context.Context, addr string) {
+func Serve(ctx context.Context, addr string, shutdown chan error) {
 	getHandler := GetHandler{}
 
 	server := http.Server{
@@ -44,13 +43,9 @@ func Serve(ctx context.Context, addr string) {
 
 	go func() {
 		err := server.ListenAndServe()
-		if err != http.ErrServerClosed {
-			log.Fatal(err)
-		} else {
-			log.Println("Server closed")
-		}
+		shutdown <- err
 	}()
 
 	<-ctx.Done()
-	log.Println(server.Shutdown(ctx))
+	shutdown <- server.Shutdown(context.Background())
 }
