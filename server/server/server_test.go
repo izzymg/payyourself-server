@@ -9,11 +9,11 @@ import (
 )
 
 type testTokenChecker struct {
-	TestTokenIsValid func(token string) bool
+	TestTokenIsValid func(ctx context.Context, token string) bool
 }
 
-func (t testTokenChecker) TokenIsValid(token string) bool {
-	return t.TestTokenIsValid(token)
+func (t testTokenChecker) TokenIsValid(ctx context.Context, token string) bool {
+	return t.TestTokenIsValid(ctx, token)
 }
 
 func testGetHandler(expectCode int, req *http.Request, tokenChecker TokenChecker) func(t *testing.T) {
@@ -31,7 +31,7 @@ func TestGetHandler(t *testing.T) {
 
 	matchingToken := "abc"
 	tokenChecker := testTokenChecker{
-		TestTokenIsValid: func(token string) bool {
+		TestTokenIsValid: func(ctx context.Context, token string) bool {
 			if token == matchingToken {
 				return true
 			} else {

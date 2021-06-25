@@ -7,7 +7,7 @@ import (
 )
 
 type TokenChecker interface {
-	TokenIsValid(token string) bool
+	TokenIsValid(ctx context.Context, token string) bool
 }
 
 type GetHandler struct {
@@ -23,7 +23,7 @@ func (h GetHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if !h.tokenChecker.TokenIsValid(token) {
+	if !h.tokenChecker.TokenIsValid(req.Context(), token) {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, "token invalid")
 		return
