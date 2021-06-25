@@ -129,6 +129,10 @@ function appInit() {
         const signOutBtn = document.querySelector(".sign-out-btn")
         signOutBtn.addEventListener("click", onSignOutClicked)
 
+        document.querySelector(".get-token").addEventListener("click", () => {
+            const token = getToken()
+            debugLine(token)
+        })
         document.querySelector(".get-user-save-btn").addEventListener("click", getUserSave)
         document.querySelector(".remove-user-save-btn").addEventListener("click", removeUserSave)
         document.querySelector(".save-user-save-btn").addEventListener("click", saveUserSave)
