@@ -1,0 +1,12 @@
+{
+    "incomae": {
+        "cents":100000
+    },
+    "savingzsAmount": {
+        "cents":0
+    },
+    "savingsGoalLdist":
+        "[[\"yo\",{\"goal\":{\"cents\":5000000},\"amount\":{\"cents\":416666.6666666666},\"deadline\":6,\"order\":-1}]]",
+    "expensetList":
+        "[[\"AA\",{\"amount\":{\"cents\":30000},\"order\":1}],[\"New Expense\",{\"amount\":{\"cents\":5500},\"order\":2}]]"
+}
