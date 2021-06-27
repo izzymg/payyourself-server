@@ -30,6 +30,8 @@ function onSignInSuccess(googleUser) {
     setNameElement(activeUser.getName())
     setPhotoElement(activeUser.getImageUrl())
 
+    console.log("User ID: ", activeUser.getId())
+
 }
 
 function onSignInFail(e) {
