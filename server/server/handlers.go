@@ -58,3 +58,10 @@ func (h PYHandler) DeleteHandler(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintln(w, "soon to come")
 	})
 }
+
+// MakePYHandler returns a new PYHandler using the given token checker
+func MakePYHandler(tokenChecker TokenChecker) PYHandler {
+	return PYHandler{
+		tokenChecker,
+	}
+}
