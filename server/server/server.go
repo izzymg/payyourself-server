@@ -6,39 +6,44 @@ import (
 	"net/http"
 )
 
-type TokenChecker interface {
-	TokenIsValid(ctx context.Context, token string) bool
+// AppHandler defines the handling functions of py-server.
+type AppHandler interface {
+	GetHandler(w http.ResponseWriter, req *http.Request)
+	PostHandler(w http.ResponseWriter, req *http.Request)
+	DeleteHandler(w http.ResponseWriter, req *http.Request)
 }
 
-type GetHandler struct {
-	tokenChecker TokenChecker
-}
+// Router is the main route handler for py-server.
+func Router(handler AppHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		path := req.URL.Path
+		if path != "/v1/usersave" {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "not found")
+			return
+		}
 
-func (h GetHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	token := req.Header.Get("Token")
-
-	if len(token) < 1 {
-		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprintf(w, "no token provided")
-		return
+		switch req.Method {
+		case http.MethodGet:
+			handler.GetHandler(w, req)
+		case http.MethodPost:
+			handler.PostHandler(w, req)
+		case http.MethodDelete:
+			handler.DeleteHandler(w, req)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			fmt.Fprintf(w, "invalid method")
+			return
+		}
 	}
-
-	if !h.tokenChecker.TokenIsValid(req.Context(), token) {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(w, "token invalid")
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "hello!")
 }
 
-func Serve(ctx context.Context, addr string, shutdown chan error) {
-	getHandler := GetHandler{}
-
+// Serve runs ListenAndServe in a new goroutine, sending errors into shutdown,
+// and blocking until ctx finishes before shutting down the server gracefully.
+func Serve(ctx context.Context, addr string, shutdown chan error, handler http.Handler) {
 	server := http.Server{
 		Addr:    addr,
-		Handler: getHandler,
+		Handler: handler,
 	}
 
 	go func() {
