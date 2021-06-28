@@ -29,6 +29,8 @@ func main() {
 	ctx := context.Background()
 	shutdownServer := make(chan error)
 
+	allowedOrigin := os.Getenv("PYSERVER_ALLOWED_ORIGIN")
+
 	storerRoot := os.Getenv("PYSERVER_STORE_ROOT")
 	if len(storerRoot) == 0 {
 		log.Fatal("no store root provided")
@@ -49,7 +51,7 @@ func main() {
 		UserSaveStorer: storer,
 		TokenChecker:   token.MakeGoogleTokenChecker(checkerClientID),
 	}
-	go server.Serve(ctx, serverAddr, shutdownServer, server.Route(routeHandlers))
+	go server.Serve(ctx, serverAddr, shutdownServer, server.Route(routeHandlers, allowedOrigin))
 
 	log.Println(fmt.Sprintf("server started on %s", serverAddr))
 	err = <-shutdownServer

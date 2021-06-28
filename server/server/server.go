@@ -34,7 +34,7 @@ type RouterHandlers interface {
 }
 
 // Route takes a set of RouteHandlers and routes a request to the appropriate handler
-func Route(handler RouterHandlers) http.HandlerFunc {
+func Route(handler RouterHandlers, allowedOrigin string) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
 		if path != "/v1/usersave" {
@@ -42,8 +42,14 @@ func Route(handler RouterHandlers) http.HandlerFunc {
 			fmt.Fprintf(w, "not found")
 			return
 		}
+		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 
 		switch req.Method {
+		case http.MethodOptions:
+			w.Header().Set("Access-Control-Allow-Methods", "GET,POST,DELETE")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Token")
+			w.Header().Set("Access-Control-Max-Age", "3600")
+			w.WriteHeader(http.StatusNoContent)
 		case http.MethodGet:
 			handler.GetHandler(w, req)
 		case http.MethodPost:
@@ -53,7 +59,6 @@ func Route(handler RouterHandlers) http.HandlerFunc {
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			fmt.Fprintf(w, "invalid method")
-			return
 		}
 	}
 }
