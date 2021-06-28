@@ -64,11 +64,25 @@ func (t testReadCloser) Close() error {
 	return nil
 }
 
+// fake io.writecloser
+type testWriteCloser struct{}
+
+func (t testWriteCloser) Write(p []byte) (int, error) {
+	return 0, io.EOF
+}
+func (t testWriteCloser) Close() error {
+	return nil
+}
+
 // fake storer of user saves that fetches the fake readercloser
 type testUserSaveStorer struct{}
 
 func (t testUserSaveStorer) Fetch(userID string) (io.ReadCloser, error) {
 	return testReadCloser{}, nil
+}
+
+func (t testUserSaveStorer) Save(ctx context.Context, userID string) (io.WriteCloser, error) {
+	return testWriteCloser{}, nil
 }
 
 func TestHandleFetch(t *testing.T) {
@@ -86,5 +100,23 @@ func TestHandleFetch(t *testing.T) {
 
 	if code := rr.Code; code != http.StatusOK {
 		t.Errorf("expected code %d, got %d", http.StatusOK, code)
+	}
+}
+
+func TestHandleSave(t *testing.T) {
+	req, err := http.NewRequest("POST", "/", nil)
+	if err != nil {
+		t.Error(err)
+	}
+	authedReq := authenticatedRequest{
+		req:    req,
+		userID: "some user id",
+	}
+
+	rr := httptest.NewRecorder()
+	saveHandler(testUserSaveStorer{})(rr, &authedReq)
+
+	if code := rr.Code; code != http.StatusBadRequest {
+		t.Errorf("expected code %d, got %d", http.StatusBadRequest, code)
 	}
 }

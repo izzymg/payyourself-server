@@ -12,10 +12,11 @@ import (
 // GoogleStorer is a UserSaveStorer which uses Google Cloud storage
 type GoogleStorer struct {
 	client *storage.Client
+	bucket *storage.BucketHandle
 }
 
 func (gs GoogleStorer) Fetch(userID string) (io.ReadCloser, error) {
-	reader, err := gs.client.Bucket("user-saves-1").Object(userID).NewReader(context.TODO())
+	reader, err := gs.bucket.Object(userID).NewReader(context.TODO())
 	if err != nil {
 		if errors.Is(err, storage.ErrObjectNotExist) {
 			return nil, server.ErrNoUserSave
@@ -24,6 +25,12 @@ func (gs GoogleStorer) Fetch(userID string) (io.ReadCloser, error) {
 		}
 	}
 	return reader, nil
+}
+
+func (gs GoogleStorer) Save(ctx context.Context, userID string) (io.WriteCloser, error) {
+	writer := gs.bucket.Object(userID).NewWriter(ctx)
+	writer.ObjectAttrs.ContentType = "application/json"
+	return writer, nil
 }
 
 func (gs GoogleStorer) Close() error {
@@ -35,7 +42,11 @@ func MakeGoogleStorer(ctx context.Context) (*GoogleStorer, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	bucket := client.Bucket("user-saves-1")
+
 	return &GoogleStorer{
 		client,
+		bucket,
 	}, nil
 }

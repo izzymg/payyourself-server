@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -23,6 +24,16 @@ func (fss FileSystemStorer) Fetch(userID string) (io.ReadCloser, error) {
 			return nil, server.ErrNoUserSave
 		}
 		return nil, fmt.Errorf("failed to open file for user ID %s: %w", userID, err)
+	}
+
+	return file, nil
+}
+
+func (fss FileSystemStorer) Save(ctx context.Context, userID string) (io.WriteCloser, error) {
+	fp := filepath.Join(fss.root, userID)
+	file, err := os.Create(fp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create file for user ID %s: %w", userID, err)
 	}
 
 	return file, nil
