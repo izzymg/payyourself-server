@@ -6,6 +6,26 @@ import (
 	"net/http"
 )
 
+// AppRouteHandlers define the handlers for py-server using the given dependencies
+type AppRouteHandlers struct {
+	TokenChecker   TokenChecker
+	UserSaveStorer UserSaveStorer
+}
+
+func (h AppRouteHandlers) GetHandler(w http.ResponseWriter, req *http.Request) {
+	authenticateRequest(h.TokenChecker, fetchHandler(h.UserSaveStorer))(w, req)
+}
+
+func (h AppRouteHandlers) PostHandler(w http.ResponseWriter, req *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+	fmt.Fprint(w, "coming soon")
+}
+
+func (h AppRouteHandlers) DeleteHandler(w http.ResponseWriter, req *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+	fmt.Fprint(w, "coming soon")
+}
+
 // RouterHandlers are the possible handlers for the Router
 type RouterHandlers interface {
 	GetHandler(w http.ResponseWriter, req *http.Request)
@@ -13,8 +33,8 @@ type RouterHandlers interface {
 	DeleteHandler(w http.ResponseWriter, req *http.Request)
 }
 
-// Router is the main route handler for py-server.
-func Router(handler RouterHandlers) http.HandlerFunc {
+// Route takes a set of RouteHandlers and routes a request to the appropriate handler
+func Route(handler RouterHandlers) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
 		if path != "/v1/usersave" {
@@ -40,7 +60,7 @@ func Router(handler RouterHandlers) http.HandlerFunc {
 
 // Serve runs ListenAndServe in a new goroutine, sending errors into shutdown,
 // and blocking until ctx finishes before shutting down the server gracefully.
-func Serve(ctx context.Context, addr string, shutdown chan error, handler http.Handler) {
+func Serve(ctx context.Context, addr string, shutdown chan error, handler http.HandlerFunc) {
 	server := http.Server{
 		Addr:    addr,
 		Handler: handler,

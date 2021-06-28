@@ -35,7 +35,7 @@ func (h teapotHandler) DeleteHandler(w http.ResponseWriter, req *http.Request) {
 func TestRouter(t *testing.T) {
 
 	handler := teapotHandler{}
-	router := Router(handler)
+	router := Route(handler)
 
 	tests := map[string]int{
 		"https://example.com/invalid":       http.StatusNotFound,
@@ -65,7 +65,7 @@ func TestRouter(t *testing.T) {
 	}
 
 	handler = teapotHandler{}
-	router = Router(handler)
+	router = Route(handler)
 
 	allowedMethods := []string{http.MethodGet, http.MethodDelete, http.MethodPost}
 	notAllowedMethods := []string{http.MethodConnect, http.MethodPut, http.MethodPatch}
@@ -93,7 +93,7 @@ func TestServe(t *testing.T) {
 
 	t.Run("should die on invalid port", func(t *testing.T) {
 		shutdown := make(chan error)
-		go Serve(context.TODO(), "localhost:-1", shutdown, http.HandlerFunc(handler))
+		go Serve(context.TODO(), "localhost:-1", shutdown, handler)
 		err := <-shutdown
 		if err == nil {
 			t.Error("expected invalid port error, got none")
@@ -106,7 +106,7 @@ func TestServe(t *testing.T) {
 			shutdown := make(chan error)
 			ctx, cancel := context.WithCancel(context.Background())
 
-			go Serve(ctx, "localhost:0", shutdown, http.HandlerFunc(handler))
+			go Serve(ctx, "localhost:0", shutdown, handler)
 			cancel()
 			err := <-shutdown
 			if err != nil {
