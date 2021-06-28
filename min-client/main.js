@@ -65,17 +65,13 @@ function getUser() {
 }
 
 function getToken() {
-    const token = getUser().getAuthResponse().id_token
-    if(!token) {
-        throw "No token"
-    }
-    return token
+    return getUser().getAuthResponse().id_token
 }
 
 async function getUserSave() {
     debugLine("getting user save")
     
-    const token = getToken().toString()
+    const token = getToken()
     debugLine("got token")
 
     try {
@@ -90,6 +86,10 @@ async function getUserSave() {
         if(res.status != 200) {
             console.debug(res)
             debugLine(`fetch returned bad status ${res.status}: ${res.statusText} `)
+        } else {
+            res.json()
+                .then(v => console.log(v))
+                .catch(e => console.error(e))
         }
     } catch(e) {
         debugLine("fetch network failed", e)
