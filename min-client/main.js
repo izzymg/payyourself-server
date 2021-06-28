@@ -88,19 +88,44 @@ async function getUserSave() {
             debugLine(`fetch returned bad status ${res.status}: ${res.statusText} `)
         } else {
             res.json()
-                .then(v => console.log(v))
+                .then(v => {
+                    document.querySelector(".json-area").value = JSON.stringify(v)
+                })
                 .catch(e => console.error(e))
         }
     } catch(e) {
         debugLine("fetch network failed", e)
     }
 
+
+}
+async function saveUserSave() {
+    const json = document.querySelector(".json-area").value
+    debugLine("saving user save")
+
+    const token = getToken()
+    debugLine("got token")
+
+    try {
+        debugLine("fetch()")
+        const res = await fetch("http://localhost:5000/v1/usersave", {
+            method: "POST",
+            headers: {
+                "Token": token,
+            },
+            body: json,
+        })
+        debugLine("fetch done")
+        if(res.status != 200) {
+            console.debug(res)
+            debugLine(`fetch returned bad status ${res.status}: ${res.statusText} `)
+        }
+    } catch(e) {
+        debugLine("fetch network failed", e)
+    }
 }
 function removeUserSave() {
     debugLine("removing user save")
-}
-function saveUserSave() {
-    debugLine("saving user save")
 }
 
 
