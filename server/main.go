@@ -60,10 +60,12 @@ func main() {
 		}
 		storer = s
 	} else {
+		log.Println("bringing up google cloud storer")
 		s, err := storage.MakeGoogleStorer(ctx)
 		if err != nil {
 			log.Fatalf("failed to make storer: %s", err)
 		}
+		log.Println("google cloud storer up")
 		storer = s
 	}
 

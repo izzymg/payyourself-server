@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -36,11 +35,13 @@ type authenticatedRequestHandler = func(w http.ResponseWriter, req *authenticate
 // TokenChecker, calling next if it is valid, rejecting the request if invalid.
 func authenticateRequest(tokenChecker TokenChecker, next authenticatedRequestHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		LogWithID(req.Context(), "trying to validate token")
 		token := req.Header.Get("Token")
 
 		if len(token) < 1 {
 			w.WriteHeader(http.StatusForbidden)
 			fmt.Fprintf(w, "no token provided")
+			LogWithID(req.Context(), "no token provided")
 			return
 		}
 
@@ -48,12 +49,15 @@ func authenticateRequest(tokenChecker TokenChecker, next authenticatedRequestHan
 		if !ok || len(userID) < 1 {
 			w.WriteHeader(http.StatusUnauthorized)
 			fmt.Fprintf(w, "token invalid")
-			if len(userID) < 1 {
-				log.Printf("token validated with empty user ID: %v", req)
-			}
+			LogWithID(req.Context(), "token invalid")
 			return
 		}
 
+		if ok && len(userID) < 1 {
+			LogWithID(req.Context(), "!! token validator returned ok, but user id is blank")
+		}
+
+		LogWithID(req.Context(), "validated token")
 		// valid token
 		next(w, &authenticatedRequest{
 			userID: userID,
@@ -66,14 +70,17 @@ func authenticateRequest(tokenChecker TokenChecker, next authenticatedRequestHan
 // UserSaveStorer
 func fetchHandler(userSaveStorer UserSaveStorer) authenticatedRequestHandler {
 	return func(w http.ResponseWriter, req *authenticatedRequest) {
+		LogWithID(req.req.Context(), "trying to fetch usersave")
+
 		reader, err := userSaveStorer.Fetch(req.userID)
 		if err != nil {
 			if errors.Is(err, ErrNoUserSave) {
+				LogWithID(req.req.Context(), "no usersave")
 				w.WriteHeader(http.StatusNotFound)
 				fmt.Fprint(w, "No UserSave for this user")
 				return
 			}
-			log.Printf("failed to fetch user save: %s", err)
+			LogWithID(req.req.Context(), "!! failed to fetch usersave: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, "Failed to fetch user save")
 			return
@@ -81,17 +88,18 @@ func fetchHandler(userSaveStorer UserSaveStorer) authenticatedRequestHandler {
 		defer func() {
 			err := reader.Close()
 			if err != nil {
-				log.Printf("failed to close user save: %s", err)
+				LogWithID(req.req.Context(), "!! failed to close usersave: %s", err)
 			}
 		}()
 
 		w.Header().Add("Content-Type", "application/json")
 		_, err = io.Copy(w, reader)
 		if err != nil {
-			log.Printf("failed to send user save: %s", err)
+			LogWithID(req.req.Context(), "!! failed to send usersave: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, "Failed to send user save")
 			return
 		}
+		LogWithID(req.req.Context(), "sent usersave")
 	}
 }

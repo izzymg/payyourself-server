@@ -9,6 +9,20 @@ import (
 	"github.com/rs/xid"
 )
 
+type requestIdKeyType string
+
+const requestIdKey requestIdKeyType = "req-id"
+
+func LogWithID(ctx context.Context, format string, args ...interface{}) {
+	id, ok := ctx.Value(requestIdKey).(string)
+	if !ok {
+		log.Printf("failed to log request, no id")
+		return
+	}
+	format = fmt.Sprintf("request %s: %s", id, format)
+	log.Printf(format, args...)
+}
+
 // AppRouteHandlers define the handlers for py-server using the given dependencies
 type AppRouteHandlers struct {
 	TokenChecker   TokenChecker
@@ -53,6 +67,7 @@ func Route(handler RouterHandlers, allowedOrigin string) http.HandlerFunc {
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Token")
 			w.Header().Set("Access-Control-Max-Age", "3600")
 			w.WriteHeader(http.StatusNoContent)
+			LogWithID(req.Context(), "served CORS options")
 		case http.MethodGet:
 			handler.GetHandler(w, req)
 		case http.MethodPost:
@@ -60,6 +75,7 @@ func Route(handler RouterHandlers, allowedOrigin string) http.HandlerFunc {
 		case http.MethodDelete:
 			handler.DeleteHandler(w, req)
 		default:
+			LogWithID(req.Context(), "invalid method used")
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			fmt.Fprintf(w, "invalid method")
 		}
@@ -74,9 +90,12 @@ func Serve(ctx context.Context, addr string, shutdown chan error, handler http.H
 		Addr: addr,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			id := xid.New()
-			log.Printf("%s: %s -> %s: host %s user-agent %s", id, req.Method, req.URL, req.Host, req.UserAgent())
-			handler(w, req)
-			log.Printf("%s: request finished", id)
+			log.Printf("entry %s: %s -> %s: host %s user-agent %s", id, req.Method, req.URL, req.Host, req.UserAgent())
+
+			ctx := context.WithValue(req.Context(), requestIdKey, id.String())
+			handler(w, req.WithContext(ctx))
+
+			log.Printf("exit %s: request finished", id)
 		}),
 	}
 
