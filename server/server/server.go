@@ -6,15 +6,15 @@ import (
 	"net/http"
 )
 
-// AppHandler defines the handling functions of py-server.
-type AppHandler interface {
+// RouterHandlers are the possible handlers for the Router
+type RouterHandlers interface {
 	GetHandler(w http.ResponseWriter, req *http.Request)
 	PostHandler(w http.ResponseWriter, req *http.Request)
 	DeleteHandler(w http.ResponseWriter, req *http.Request)
 }
 
 // Router is the main route handler for py-server.
-func Router(handler AppHandler) http.HandlerFunc {
+func Router(handler RouterHandlers) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
 		if path != "/v1/usersave" {
