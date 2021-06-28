@@ -80,7 +80,7 @@ async function getUserSave() {
 
     try {
         debugLine("fetch()")
-        const res = await fetch("http://localhost:5000/v1", {
+        const res = await fetch("http://localhost:5000/v1/usersave", {
             method: "GET",
             headers: {
                 "g-token": token,
