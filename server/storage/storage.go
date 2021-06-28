@@ -22,3 +22,21 @@ func (fss FileSystemStorer) Fetch(userID string) (io.ReadCloser, error) {
 
 	return file, nil
 }
+
+// MakeFileSystemStorer returns a new FileSystemStorer using the given root,
+// trying open it for writing or create it if it doesn't exist
+func MakeFileSystemStorer(root string) (*FileSystemStorer, error) {
+
+	info, err := os.Stat(root)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat root: %w", err)
+	}
+
+	if !info.IsDir() {
+		return nil, fmt.Errorf("provided root is not a directory: %w", err)
+	}
+
+	return &FileSystemStorer{
+		root: root,
+	}, nil
+}
