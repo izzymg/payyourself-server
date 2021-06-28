@@ -2,11 +2,14 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 )
+
+var ErrNoUserSave = errors.New("no such user save")
 
 // TokenChecker defines methods for validating a given token,
 // providing the associated ID and true if valid, or false if invalid
@@ -64,18 +67,23 @@ func authenticateRequest(tokenChecker TokenChecker, next authenticatedRequestHan
 func fetchHandler(userSaveStorer UserSaveStorer) authenticatedRequestHandler {
 	return func(w http.ResponseWriter, req *authenticatedRequest) {
 		reader, err := userSaveStorer.Fetch(req.userID)
+		if err != nil {
+			if errors.Is(err, ErrNoUserSave) {
+				w.WriteHeader(http.StatusNotFound)
+				fmt.Fprint(w, "No UserSave for this user")
+				return
+			}
+			log.Printf("failed to fetch user save: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "Failed to fetch user save")
+			return
+		}
 		defer func() {
 			err := reader.Close()
 			if err != nil {
 				log.Printf("failed to close user save: %s", err)
 			}
 		}()
-		if err != nil {
-			log.Printf("failed to fetch user save: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, "Failed to fetch user save")
-			return
-		}
 
 		_, err = io.Copy(w, reader)
 		if err != nil {
