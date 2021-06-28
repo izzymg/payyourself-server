@@ -2,7 +2,6 @@ package token
 
 import (
 	"context"
-	"log"
 
 	"google.golang.org/api/idtoken"
 )
@@ -15,10 +14,13 @@ type GoogleTokenChecker struct {
 
 // TokenIsValid checks the given token against google's oauth api,
 // using the provided clientId if any is given.
-func (c GoogleTokenChecker) TokenIsValid(ctx context.Context, token string) bool {
+func (c GoogleTokenChecker) TokenIsValid(ctx context.Context, token string) (string, bool) {
 	payload, err := idtoken.Validate(ctx, token, c.clientId)
-	log.Println(payload)
-	return err == nil
+	if err != nil {
+		return "", false
+	}
+
+	return payload.Subject, true
 }
 
 // MakeGoogleTokenChecker returns a new GoogleTokenChecker

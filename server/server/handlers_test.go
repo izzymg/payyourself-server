@@ -2,22 +2,24 @@ package server
 
 import (
 	"context"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
 type testTokenChecker struct {
-	TestTokenIsValid func(ctx context.Context, token string) bool
+	TestTokenIsValid func(ctx context.Context, token string) (string, bool)
 }
 
-func (t testTokenChecker) TokenIsValid(ctx context.Context, token string) bool {
+func (t testTokenChecker) TokenIsValid(ctx context.Context, token string) (string, bool) {
 	return t.TestTokenIsValid(ctx, token)
 }
 
 // checkRequestToken with next handler that returns status teapot
 func makeCheckTokenTest(expectCode int, req *http.Request, tokenChecker TokenChecker) func(t *testing.T) {
 	return func(t *testing.T) {
-		handler := checkRequestToken(tokenChecker, func(w http.ResponseWriter, req *http.Request) {
+		handler := checkRequestToken(tokenChecker, func(w http.ResponseWriter, req *AuthenticatedRequest) {
 			w.WriteHeader(http.StatusTeapot)
 		})
 
@@ -30,11 +32,11 @@ func makeCheckTokenTest(expectCode int, req *http.Request, tokenChecker TokenChe
 func TestCheckRequestToken(t *testing.T) {
 	matchingToken := "abc"
 	tokenChecker := testTokenChecker{
-		TestTokenIsValid: func(ctx context.Context, token string) bool {
+		TestTokenIsValid: func(ctx context.Context, token string) (string, bool) {
 			if token == matchingToken {
-				return true
+				return "someID", true
 			} else {
-				return false
+				return "", false
 			}
 		},
 	}
@@ -52,34 +54,41 @@ func TestCheckRequestToken(t *testing.T) {
 	t.Run("matching token", makeCheckTokenTest(http.StatusTeapot, req, tokenChecker))
 }
 
-func TestPYHandler(t *testing.T) {
-	// token checker that always allows requests
-	tokenChecker := testTokenChecker{
-		TestTokenIsValid: func(ctx context.Context, token string) bool {
-			return true
-		},
+// fake io.readcloser
+type testReadCloser struct{}
+
+func (t testReadCloser) Read(p []byte) (int, error) {
+	return 0, io.EOF
+}
+func (t testReadCloser) Close() error {
+	return nil
+}
+
+// fake storer of user saves that fetches the fake readercloser
+type testUserSaveStorer struct{}
+
+func (t testUserSaveStorer) Fetch(userID string) (io.ReadCloser, error) {
+	return testReadCloser{}, nil
+}
+
+func TestHandleFetch(t *testing.T) {
+	handler := UserSaveHandler{
+		testUserSaveStorer{},
 	}
 
-	pyHandler := MakePYHandler(tokenChecker)
-
-	req, err := http.NewRequest("GET", "", nil)
+	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
 		t.Error(err)
 	}
+	authedReq := AuthenticatedRequest{
+		req:    req,
+		userID: "some user id",
+	}
 
-	StatusCodeTest(
-		req,
-		http.StatusNotImplemented,
-		pyHandler.GetHandler,
-	)
-	StatusCodeTest(
-		req,
-		http.StatusNotImplemented,
-		pyHandler.PostHandler,
-	)
-	StatusCodeTest(
-		req,
-		http.StatusNotImplemented,
-		pyHandler.DeleteHandler,
-	)
+	rr := httptest.NewRecorder()
+	handler.HandleFetch(rr, &authedReq)
+
+	if code := rr.Code; code != http.StatusOK {
+		t.Errorf("expected code %d, got %d", http.StatusOK, code)
+	}
 }
