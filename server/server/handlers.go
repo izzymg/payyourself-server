@@ -8,24 +8,30 @@ import (
 	"net/http"
 )
 
+// TokenChecker defines methods for validating a given token,
+// providing the associated ID and true if valid, or false if invalid
 type TokenChecker interface {
 	TokenIsValid(ctx context.Context, token string) (string, bool)
 }
 
+// UserSaveStorer defines methods for fetching, deleting and saving
+// UserSave data
 type UserSaveStorer interface {
+	// Fetch returns a reader for the UserSave data at a given UserID
 	Fetch(userID string) (io.ReadCloser, error)
 }
 
-type AuthenticatedRequest struct {
+// authenticatedRequest wraps an HTTP request with a UserID
+type authenticatedRequest struct {
 	req    *http.Request
 	userID string
 }
 
-type AuthenticatedRequestHandler = func(w http.ResponseWriter, req *AuthenticatedRequest)
+type authenticatedRequestHandler = func(w http.ResponseWriter, req *authenticatedRequest)
 
 // Returns an HTTP handler which checks the request token against the provided
 // TokenChecker, calling next if it is valid, rejecting the request if invalid.
-func checkRequestToken(tokenChecker TokenChecker, next AuthenticatedRequestHandler) http.HandlerFunc {
+func authenticateRequest(tokenChecker TokenChecker, next authenticatedRequestHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		token := req.Header.Get("Token")
 
@@ -46,53 +52,37 @@ func checkRequestToken(tokenChecker TokenChecker, next AuthenticatedRequestHandl
 		}
 
 		// valid token
-		next(w, &AuthenticatedRequest{
+		next(w, &authenticatedRequest{
 			userID: userID,
 			req:    req,
 		})
 	}
 }
 
-type UserSaveHandler struct {
-	userSaveStorer UserSaveStorer
-}
-
-func (h UserSaveHandler) HandleFetch(w http.ResponseWriter, req *AuthenticatedRequest) {
-	reader, err := h.userSaveStorer.Fetch(req.userID)
-	defer func() {
-		err := reader.Close()
+// fetchHandler generates an AuthenticatedRequestHandler for fetching from the
+// UserSaveStorer
+func fetchHandler(userSaveStorer UserSaveStorer) authenticatedRequestHandler {
+	return func(w http.ResponseWriter, req *authenticatedRequest) {
+		reader, err := userSaveStorer.Fetch(req.userID)
+		defer func() {
+			err := reader.Close()
+			if err != nil {
+				log.Printf("failed to close user save: %s", err)
+			}
+		}()
 		if err != nil {
-			log.Printf("failed to close user save: %s", err)
+			log.Printf("failed to fetch user save: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "Failed to fetch user save")
+			return
 		}
-	}()
-	if err != nil {
-		log.Printf("failed to fetch user save: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Failed to fetch user save")
-		return
-	}
 
-	_, err = io.Copy(w, reader)
-	if err != nil {
-		log.Printf("failed to send user save: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Failed to send user save")
-		return
-	}
-}
-
-func (h UserSaveHandler) HandleSave(w http.ResponseWriter, req *AuthenticatedRequest) {
-	w.WriteHeader(http.StatusNotImplemented)
-	fmt.Fprintln(w, "soon to come")
-}
-
-func (h UserSaveHandler) HandleDelete(w http.ResponseWriter, req *AuthenticatedRequest) {
-	w.WriteHeader(http.StatusNotImplemented)
-	fmt.Fprintln(w, "soon to come")
-}
-
-func MakeUserSaveHandler(userSaveStorer UserSaveStorer) UserSaveHandler {
-	return UserSaveHandler{
-		userSaveStorer,
+		_, err = io.Copy(w, reader)
+		if err != nil {
+			log.Printf("failed to send user save: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "Failed to send user save")
+			return
+		}
 	}
 }

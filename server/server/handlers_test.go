@@ -19,7 +19,7 @@ func (t testTokenChecker) TokenIsValid(ctx context.Context, token string) (strin
 // checkRequestToken with next handler that returns status teapot
 func makeCheckTokenTest(expectCode int, req *http.Request, tokenChecker TokenChecker) func(t *testing.T) {
 	return func(t *testing.T) {
-		handler := checkRequestToken(tokenChecker, func(w http.ResponseWriter, req *AuthenticatedRequest) {
+		handler := authenticateRequest(tokenChecker, func(w http.ResponseWriter, req *authenticatedRequest) {
 			w.WriteHeader(http.StatusTeapot)
 		})
 
@@ -72,21 +72,17 @@ func (t testUserSaveStorer) Fetch(userID string) (io.ReadCloser, error) {
 }
 
 func TestHandleFetch(t *testing.T) {
-	handler := UserSaveHandler{
-		testUserSaveStorer{},
-	}
-
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
 		t.Error(err)
 	}
-	authedReq := AuthenticatedRequest{
+	authedReq := authenticatedRequest{
 		req:    req,
 		userID: "some user id",
 	}
 
 	rr := httptest.NewRecorder()
-	handler.HandleFetch(rr, &authedReq)
+	fetchHandler(testUserSaveStorer{})(rr, &authedReq)
 
 	if code := rr.Code; code != http.StatusOK {
 		t.Errorf("expected code %d, got %d", http.StatusOK, code)
