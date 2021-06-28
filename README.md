@@ -7,6 +7,16 @@ Pay Yourself backend
 
 `server` is written in Go
 
+## Docker development
+
+`docker build -t py-server:latest .`
+
+Grab the Google service account credentials JSON and save it as  `creds.json`, which is in .gitignore.
+
+Then run `dev_docker.sh`, which mounts `creds.json` into a py-server container,
+and points the Google app credentials variable to it.
+
+
 ## API defs
 
 ### Expected request headers

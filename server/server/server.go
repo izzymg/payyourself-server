@@ -3,7 +3,10 @@ package server
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
+
+	"github.com/rs/xid"
 )
 
 // AppRouteHandlers define the handlers for py-server using the given dependencies
@@ -65,10 +68,16 @@ func Route(handler RouterHandlers, allowedOrigin string) http.HandlerFunc {
 
 // Serve runs ListenAndServe in a new goroutine, sending errors into shutdown,
 // and blocking until ctx finishes before shutting down the server gracefully.
+// Automatically logs all requests
 func Serve(ctx context.Context, addr string, shutdown chan error, handler http.HandlerFunc) {
 	server := http.Server{
-		Addr:    addr,
-		Handler: handler,
+		Addr: addr,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			id := xid.New()
+			log.Printf("%s: %s -> %s: host %s user-agent %s", id, req.Method, req.URL, req.Host, req.UserAgent())
+			handler(w, req)
+			log.Printf("%s: request finished", id)
+		}),
 	}
 
 	go func() {

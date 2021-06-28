@@ -11,10 +11,20 @@ import (
 	"py-server/token"
 )
 
-func isDevMode() bool {
+type opts struct {
+	development bool
+	useFS       bool
+}
+
+func getOpts() opts {
 	devFlag := flag.Bool("development", false, "Runs the server in development mode")
+	fsFlag := flag.Bool("fs", false, "Use the filesystem to store UserSaves")
+
 	flag.Parse()
-	return *devFlag
+	return opts{
+		development: *devFlag,
+		useFS:       *fsFlag,
+	}
 }
 
 func getServerAddr() string {
@@ -27,34 +37,45 @@ func getServerAddr() string {
 
 func main() {
 	ctx := context.Background()
-	shutdownServer := make(chan error)
+	opts := getOpts()
 
 	allowedOrigin := os.Getenv("PYSERVER_ALLOWED_ORIGIN")
-
-	storerRoot := os.Getenv("PYSERVER_STORE_ROOT")
-	if len(storerRoot) == 0 {
-		log.Fatal("no store root provided")
-	}
-
 	serverAddr := getServerAddr()
+
 	checkerClientID, foundClientID := os.LookupEnv("PYSERVER_CLIENTID")
-	if !foundClientID && !isDevMode() {
+	if !foundClientID && !opts.development {
 		log.Fatal("client ID must be provided if server is not in development mode")
 	}
 
-	storer, err := storage.MakeFileSystemStorer(storerRoot)
-	if err != nil {
-		log.Fatalf("failed to make storer: %s", err)
+	// Choose a UserSaveStorer implementation
+	var storer server.UserSaveStorer
+	if opts.useFS {
+		storerRoot := os.Getenv("PYSERVER_STORE_ROOT")
+		if len(storerRoot) == 0 {
+			log.Fatal("no store root provided")
+		}
+		s, err := storage.MakeFileSystemStorer(storerRoot)
+		if err != nil {
+			log.Fatalf("failed to make storer: %s", err)
+		}
+		storer = s
+	} else {
+		s, err := storage.MakeGoogleStorer(ctx)
+		if err != nil {
+			log.Fatalf("failed to make storer: %s", err)
+		}
+		storer = s
 	}
 
 	routeHandlers := server.AppRouteHandlers{
 		UserSaveStorer: storer,
 		TokenChecker:   token.MakeGoogleTokenChecker(checkerClientID),
 	}
+	shutdownServer := make(chan error)
 	go server.Serve(ctx, serverAddr, shutdownServer, server.Route(routeHandlers, allowedOrigin))
 
 	log.Println(fmt.Sprintf("server started on %s", serverAddr))
-	err = <-shutdownServer
+	err := <-shutdownServer
 	log.Println("exiting")
 	if err != nil {
 		log.Fatal(err)
