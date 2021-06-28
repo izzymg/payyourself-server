@@ -85,6 +85,7 @@ func fetchHandler(userSaveStorer UserSaveStorer) authenticatedRequestHandler {
 			}
 		}()
 
+		w.Header().Add("Content-Type", "application/json")
 		_, err = io.Copy(w, reader)
 		if err != nil {
 			log.Printf("failed to send user save: %s", err)
