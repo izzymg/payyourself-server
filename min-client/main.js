@@ -83,7 +83,7 @@ async function getUserSave() {
         const res = await fetch("http://localhost:5000/v1/usersave", {
             method: "GET",
             headers: {
-                "g-token": token,
+                "Token": token,
             },
         })
         debugLine("fetch done")
