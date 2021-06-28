@@ -35,7 +35,7 @@ func (h teapotHandler) DeleteHandler(w http.ResponseWriter, req *http.Request) {
 func TestRouter(t *testing.T) {
 
 	handler := teapotHandler{}
-	router := Route(handler)
+	router := Route(handler, "*")
 
 	tests := map[string]int{
 		"https://example.com/invalid":       http.StatusNotFound,
@@ -65,7 +65,7 @@ func TestRouter(t *testing.T) {
 	}
 
 	handler = teapotHandler{}
-	router = Route(handler)
+	router = Route(handler, "*")
 
 	allowedMethods := []string{http.MethodGet, http.MethodDelete, http.MethodPost}
 	notAllowedMethods := []string{http.MethodConnect, http.MethodPut, http.MethodPatch}
