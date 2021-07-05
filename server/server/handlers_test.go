@@ -84,6 +84,9 @@ func (t testUserSaveStorer) Fetch(userID string) (io.ReadCloser, error) {
 func (t testUserSaveStorer) Save(ctx context.Context, userID string) (io.WriteCloser, error) {
 	return testWriteCloser{}, nil
 }
+func (t testUserSaveStorer) Remove(ctx context.Context, userID string) error {
+	return nil
+}
 
 func TestHandleFetch(t *testing.T) {
 	req, err := http.NewRequest("GET", "/", nil)

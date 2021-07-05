@@ -38,8 +38,7 @@ func (h AppRouteHandlers) PostHandler(w http.ResponseWriter, req *http.Request) 
 }
 
 func (h AppRouteHandlers) DeleteHandler(w http.ResponseWriter, req *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-	fmt.Fprint(w, "coming soon")
+	authenticateRequest(h.TokenChecker, RemoveHandler(h.UserSaveStorer))(w, req)
 }
 
 // RouterHandlers are the possible handlers for the Router

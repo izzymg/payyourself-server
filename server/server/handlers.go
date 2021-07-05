@@ -25,6 +25,8 @@ type UserSaveStorer interface {
 	// Save returns a writer for the UserSave data at a given UserID
 	// Writes should overwrite or create.
 	Save(ctx context.Context, userID string) (io.WriteCloser, error)
+	// Remove should remove all UserSave data for the given UserID
+	Remove(ctx context.Context, userID string) error
 }
 
 // authenticatedRequest wraps an HTTP request with a UserID
@@ -81,12 +83,12 @@ func fetchHandler(userSaveStorer UserSaveStorer) authenticatedRequestHandler {
 			if errors.Is(err, ErrNoUserSave) {
 				LogWithID(req.req.Context(), "no usersave")
 				w.WriteHeader(http.StatusNotFound)
-				fmt.Fprint(w, "No UserSave for this user")
+				fmt.Fprint(w, "No usersave for this user")
 				return
 			}
 			LogWithID(req.req.Context(), "!! failed to fetch usersave: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, "Failed to fetch user save")
+			fmt.Fprint(w, "Failed to fetch usersave")
 			return
 		}
 		defer func() {
@@ -102,7 +104,7 @@ func fetchHandler(userSaveStorer UserSaveStorer) authenticatedRequestHandler {
 		if err != nil {
 			LogWithID(req.req.Context(), "!! failed to send usersave: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, "Failed to send user save")
+			fmt.Fprint(w, "Failed to send usersave")
 			return
 		}
 		LogWithID(req.req.Context(), "sent usersave")
@@ -127,19 +129,17 @@ func saveHandler(userSaveStorer UserSaveStorer) authenticatedRequestHandler {
 		if err != nil {
 			LogWithID(req.req.Context(), "failed to decode incoming usersave: %s", err)
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprint(w, "Failed to decode user save")
+			fmt.Fprint(w, "Failed to decode usersave")
 			return
 		}
 
 		// usersave is re-encoded into the UserSaveStorer
 		writer, err := userSaveStorer.Save(req.req.Context(), req.userID)
 		if err != nil {
-			if err != nil {
-				LogWithID(req.req.Context(), "!! failed to get usersave writer: %s", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprint(w, "Failed to send user save")
-				return
-			}
+			LogWithID(req.req.Context(), "!! failed to get usersave writer: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "Failed to send usersave")
+			return
 		}
 		defer func() {
 			err := writer.Close()
@@ -153,11 +153,34 @@ func saveHandler(userSaveStorer UserSaveStorer) authenticatedRequestHandler {
 		if err != nil {
 			LogWithID(req.req.Context(), "!! failed to encode outgoing usersave: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, "Failed to send user save")
+			fmt.Fprint(w, "Failed to send usersave")
 			return
 		}
 		LogWithID(req.req.Context(), "saved usersave")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Saved UserSave")
+		fmt.Fprint(w, "Saved usersave")
+	}
+}
+
+func RemoveHandler(UserSaveStorer UserSaveStorer) authenticatedRequestHandler {
+	return func(w http.ResponseWriter, req *authenticatedRequest) {
+		LogWithID(req.req.Context(), "trying to remove userSave")
+
+		err := UserSaveStorer.Remove(req.req.Context(), req.userID)
+		if err != nil {
+			if errors.Is(err, ErrNoUserSave) {
+				LogWithID(req.req.Context(), "failed to remove usersave: none found")
+				w.WriteHeader(http.StatusNotFound)
+				fmt.Fprintf(w, "No such user save to remove")
+				return
+			}
+			LogWithID(req.req.Context(), "!! failed to remove usersave: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "Failed to remove usersave")
+			return
+		}
+		LogWithID(req.req.Context(), "removed usersave")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Remove usersave")
 	}
 }

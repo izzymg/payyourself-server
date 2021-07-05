@@ -33,6 +33,18 @@ func (gs GoogleStorer) Save(ctx context.Context, userID string) (io.WriteCloser,
 	return writer, nil
 }
 
+func (gs GoogleStorer) Remove(ctx context.Context, userID string) error {
+	err := gs.bucket.Object(userID).Delete(ctx)
+	if err != nil {
+		if errors.Is(err, storage.ErrObjectNotExist) {
+			return server.ErrNoUserSave
+		} else {
+			return err
+		}
+	}
+	return nil
+}
+
 func (gs GoogleStorer) Close() error {
 	return gs.client.Close()
 }
