@@ -11,32 +11,22 @@ type JSONCurrency struct {
 }
 
 type JSONExpense struct {
+	Name   string       `json:"name"`
 	Amount JSONCurrency `json:"amount"`
-	Order  int          `json:"order"`
 }
 
-type JSONExpenseListItem struct {
-	Name string      `json:"name"`
-	Item JSONExpense `json:"item"`
-}
-
-type JSONSavingsGoal struct {
+type JSONSavings struct {
+	Name     string       `json:"name"`
 	Goal     JSONCurrency `json:"goal"`
 	Amount   JSONCurrency `json:"amount"`
 	Deadline int          `json:"deadline"`
-	Order    int          `json:"order"`
-}
-
-type JSONSavingsGoalListItem struct {
-	Name string          `json:"name"`
-	Item JSONSavingsGoal `json:"item"`
 }
 
 type JSONUserSave struct {
-	Income          JSONCurrency              `json:"income"`
-	SavingsAmount   JSONCurrency              `json:"savingsAmount"`
-	SavingsGoalList []JSONSavingsGoalListItem `json:"savingsGoalList"`
-	ExpenseList     []JSONExpenseListItem     `json:"expenseList"`
+	Income        JSONCurrency  `json:"income"`
+	SavingsAmount JSONCurrency  `json:"savingsAmount"`
+	Savings       []JSONSavings `json:"savings"`
+	Expenses      []JSONExpense `json:"expenses"`
 }
 
 func DecodeUserSave(jsonReader io.Reader) (*JSONUserSave, error) {

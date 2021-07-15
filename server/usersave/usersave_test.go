@@ -32,11 +32,11 @@ func TestDecodeUserSave(t *testing.T) {
 		t.Errorf("expected 405015 cents, got %d", userSave.SavingsAmount.Cents)
 	}
 
-	if size := len(userSave.SavingsGoalList); size != 2 {
-		t.Errorf("expected savings goal list of len 2, got %d", size)
+	if size := len(userSave.Savings); size != 1 {
+		t.Errorf("expected savings list of len 1, got %d", size)
 	}
 
-	if size := len(userSave.ExpenseList); size != 3 {
+	if size := len(userSave.Expenses); size != 2 {
 		t.Errorf("expected expense list of len 3, got %d", size)
 	}
 }
