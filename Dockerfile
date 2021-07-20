@@ -6,5 +6,5 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/py-server .
 
 FROM alpine:latest
 COPY --from=0 /bin/py-server /bin/py-server
-EXPOSE 5000
+EXPOSE 6002
 CMD ["/bin/py-server"]
