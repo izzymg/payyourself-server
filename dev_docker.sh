@@ -1,5 +1,6 @@
 #/bin/bash
 docker run -d \
+    -e PYSERVER_ADDR="0.0.0.0:6002" \
     -e PYSERVER_ALLOWED_ORIGIN="*" \
     -e PYSERVER_CLIENTID="" \
     -e GOOGLE_APPLICATION_CREDENTIALS="/creds.json" \
