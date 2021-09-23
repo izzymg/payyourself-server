@@ -55,6 +55,7 @@ func Route(handler RouterHandlers, allowedOrigin string) http.HandlerFunc {
 		if path != "/v1/usersave" {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintf(w, "not found")
+			LogWithID(req.Context(), "served 404, not found")
 			return
 		}
 		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
