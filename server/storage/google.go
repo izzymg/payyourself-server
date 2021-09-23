@@ -49,13 +49,13 @@ func (gs GoogleStorer) Close() error {
 	return gs.client.Close()
 }
 
-func MakeGoogleStorer(ctx context.Context) (*GoogleStorer, error) {
+func MakeGoogleStorer(ctx context.Context, bucketName string) (*GoogleStorer, error) {
 	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	bucket := client.Bucket("user-saves-1")
+	bucket := client.Bucket(bucketName)
 
 	return &GoogleStorer{
 		client,

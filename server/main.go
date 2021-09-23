@@ -32,12 +32,21 @@ func getServerAddr() string {
 	return addr
 }
 
+func getBucketName() string {
+	name, found := os.LookupEnv("PYSERVER_BUCKET_NAME")
+	if !found {
+		return "user-saves-1"
+	}
+	return name
+}
+
 func main() {
 	ctx := context.Background()
 	opts := getOpts()
 
 	allowedOrigin := os.Getenv("PYSERVER_ALLOWED_ORIGIN")
 	serverAddr := getServerAddr()
+	bucketName := getBucketName()
 
 	checkerClientID, foundClientID := os.LookupEnv("PYSERVER_CLIENTID")
 	if !foundClientID && !opts.development {
@@ -45,7 +54,7 @@ func main() {
 	}
 
 	log.Println("bringing up google cloud storer")
-	storer, err := storage.MakeGoogleStorer(ctx)
+	storer, err := storage.MakeGoogleStorer(ctx, bucketName)
 	if err != nil {
 		log.Fatalf("failed to make storer: %s", err)
 	}
