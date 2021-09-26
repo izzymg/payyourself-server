@@ -6,6 +6,8 @@ import (
 	"io"
 )
 
+type Cycle = string
+
 type JSONCurrency struct {
 	Cents int `json:"cents"`
 }
@@ -23,6 +25,7 @@ type JSONSavings struct {
 }
 
 type JSONUserSave struct {
+	Cycle         Cycle         `json:"cycle"`
 	Income        JSONCurrency  `json:"income"`
 	SavingsAmount JSONCurrency  `json:"savingsAmount"`
 	Savings       []JSONSavings `json:"savings"`

@@ -24,6 +24,10 @@ func TestDecodeUserSave(t *testing.T) {
 		t.Error(err)
 	}
 
+	if userSave.Cycle != "Fortnightly" {
+		t.Errorf("expected Fortnightly cycle, got %s", userSave.Cycle)
+	}
+
 	if userSave.Income.Cents != 900033 {
 		t.Errorf("expected 900033 cents, got %d", userSave.Income.Cents)
 	}
