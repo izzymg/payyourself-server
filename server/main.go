@@ -25,11 +25,12 @@ func getOpts() opts {
 }
 
 func getServerAddr() string {
-	addr, found := os.LookupEnv("PYSERVER_ADDR")
+	/// Intended for Google Cloud Run $PORT best practice
+	port, found := os.LookupEnv("PORT")
 	if !found {
 		return "0.0.0.0:5000"
 	}
-	return addr
+	return fmt.Sprintf("0.0.0.0:%s", port)
 }
 
 func getBucketName() string {
