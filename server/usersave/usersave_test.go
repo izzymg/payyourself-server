@@ -43,4 +43,8 @@ func TestDecodeUserSave(t *testing.T) {
 	if size := len(userSave.Expenses); size != 2 {
 		t.Errorf("expected expense list of len 3, got %d", size)
 	}
+
+	if userSave.Expenses[0].Tag != "Housing" {
+		t.Errorf("expected Housing tag, got %s", userSave.Expenses[0].Tag)
+	}
 }
