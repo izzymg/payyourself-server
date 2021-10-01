@@ -9,27 +9,23 @@ import (
 type Cycle = string
 type Tag = string
 
-type JSONCurrency struct {
-	Cents int `json:"cents"`
-}
-
 type JSONExpense struct {
-	Name   string       `json:"name"`
-	Amount JSONCurrency `json:"amount"`
-	Tag    Tag          `json:"tag"`
+	Name   string `json:"name"`
+	Amount int32  `json:"amount"`
+	Tag    Tag    `json:"tag"`
 }
 
 type JSONSavings struct {
-	Name     string       `json:"name"`
-	Goal     JSONCurrency `json:"goal"`
-	Amount   JSONCurrency `json:"amount"`
-	Deadline int          `json:"deadline"`
+	Name     string `json:"name"`
+	Goal     int32  `json:"goal"`
+	Amount   int32  `json:"amount"`
+	Deadline int    `json:"deadline"`
 }
 
 type JSONUserSave struct {
 	Cycle         Cycle         `json:"cycle"`
-	Income        JSONCurrency  `json:"income"`
-	SavingsAmount JSONCurrency  `json:"savingsAmount"`
+	Income        int32         `json:"income"`
+	SavingsAmount int32         `json:"savingsAmount"`
 	Savings       []JSONSavings `json:"savings"`
 	Expenses      []JSONExpense `json:"expenses"`
 }
