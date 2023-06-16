@@ -1,7 +1,8 @@
 # py-server
 
-Pay Yourself backend
+Pay Yourself is a now put to rest budgeting app following the "Pay Yourself First" principle. Vue + Golang.
 
+py-server is the golang backend.
 
 `min-client` is a minimal example of a client side JS application interacting with the server
 
